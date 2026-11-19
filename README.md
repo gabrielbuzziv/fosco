@@ -14,7 +14,7 @@ Cada captura é lida no próprio Mac, com o reconhecimento de texto da Apple (Vi
 
 ## Instalação
 
-1. Baixe o `Fosco-<versão>.dmg` da [versão mais recente](../../releases/latest).
+1. Baixe o `Fosco-<versão>.dmg` da [versão mais recente](https://github.com/gabrielbuzziv/fosco/releases/latest).
 2. Abra o arquivo e arraste o Fosco para a pasta Aplicativos.
 3. Abra o Fosco. O macOS bloqueia a primeira abertura, porque o app ainda não é notarizado pela Apple: em Ajustes do Sistema › Privacidade e Segurança, role até o aviso sobre o Fosco e clique em **Abrir Mesmo Assim**.
 
