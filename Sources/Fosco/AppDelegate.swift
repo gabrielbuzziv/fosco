@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let pipeline = RedactionPipeline()
     private lazy var clipboardGuard = ClipboardGuard(pipeline: pipeline, knownClean: DigestStore())
     private lazy var folderGuard = FolderGuard(folders: screenshotFolders(), pipeline: pipeline)
+    private let shottr = ShottrBridge()
     private var statusMenu: StatusMenu?
     /// Notifications belong to app bundles; the bare executable has none to post from.
     private lazy var notice = Bundle.main.bundleIdentifier == nil ? nil : RedactionNotice()
@@ -19,6 +20,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     /// Where the last blurred capture lives, to know which original "Restaurar Original" brings back.
     private var lastRedaction: (summary: String, source: Source)?
+    /// Whether Shottr's editor was switched to the blurred copy of that capture.
+    private var isLastRedactionShownInShottr = false
+    /// How many captures were blurred so far: an answer about an older one must not pass for the newest.
+    private var redactionCount = 0
 
     private enum Source { case clipboard, folder }
 
@@ -44,9 +49,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         clipboardGuard.isEnabled = isEnabled
         folderGuard.isEnabled = isEnabled
-        clipboardGuard.onRedaction = { [weak self] in self?.didRedact($0, in: .clipboard) }
-        clipboardGuard.onReadingChange = { [weak self] in self?.statusMenu?.isReading = $0 }
-        folderGuard.onRedaction = { [weak self] in self?.didRedact($0, in: .folder) }
+        clipboardGuard.onRedaction = { [weak self] in self?.didRedactCopy($0, copiedAt: $1) }
+        clipboardGuard.onReadingChange = { [weak self] isReading in
+            self?.statusMenu?.isReading = isReading
+            if isReading { self?.shottr.captureWasCopied() }
+        }
+        folderGuard.onRedaction = { [weak self] in self?.didRedactFile($0) }
         clipboardGuard.start()
         folderGuard.start()
         pipeline.warmUp()
@@ -132,13 +140,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Redactions
 
-    private func didRedact(_ regions: [SensitiveRegion], in source: Source) {
+    /// Records a blurred capture and returns the notification title for it.
+    private func didRedact(_ regions: [SensitiveRegion], in source: Source) -> String {
         let summary = describeRedaction(regions)
         lastRedaction = (summary, source)
+        isLastRedactionShownInShottr = false
+        redactionCount += 1
         statusMenu?.flash()
-        notice?.post(title: summary, body: source == .clipboard ? "Na área de transferência" : "No arquivo salvo")
         // Counts only: what a capture shows never goes to the log.
         log.notice("Blurred \(regions.count, privacy: .public) regions in a capture from the \(source == .clipboard ? "clipboard" : "screenshot folder", privacy: .public)")
+        return summary
+    }
+
+    private func didRedactFile(_ regions: [SensitiveRegion]) {
+        notice?.post(title: didRedact(regions, in: .folder), body: "No arquivo salvo")
+    }
+
+    private func didRedactCopy(_ regions: [SensitiveRegion], copiedAt: Date) {
+        let summary = didRedact(regions, in: .clipboard)
+        let redaction = redactionCount
+        Task {
+            // The blurred copy is on the clipboard by now, which is where Shottr takes it from.
+            let view = await shottr.showBlurredCopy(copiedAt: copiedAt)
+            guard redaction == redactionCount else { return }
+            isLastRedactionShownInShottr = view == .editor
+            let place = switch view {
+            case .editor: "Na área de transferência e no Shottr"
+            case .thumbnail: "Na área de transferência. A miniatura do Shottr ainda mostra a original."
+            case nil: "Na área de transferência"
+            }
+            notice?.post(title: summary, body: place)
+        }
     }
 
     private var canRestoreOriginal: Bool {
@@ -155,7 +187,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .clipboard: clipboardGuard.restoreOriginal()
         case .folder: folderGuard.restoreOriginal()
         }
-        if didRestore { lastRedaction = nil }
+        guard didRestore else { return }
+        lastRedaction = nil
+        // The editor that was given the blurred copy gets the original back as well.
+        if isLastRedactionShownInShottr { shottr.showClipboard() }
     }
 
     // MARK: - Setup

@@ -12,8 +12,9 @@ public typealias PasteboardItemContent = [(type: NSPasteboard.PasteboardType, da
 @MainActor
 public final class ClipboardGuard {
     public var isEnabled = true
-    /// Called after a copied capture was replaced by its blurred version.
-    public var onRedaction: (@MainActor ([SensitiveRegion]) -> Void)?
+    /// Called after a copied capture was replaced by its blurred version, with the moment the
+    /// capture showed up on the pasteboard.
+    public var onRedaction: (@MainActor (_ regions: [SensitiveRegion], _ copiedAt: Date) -> Void)?
     /// Called with true when a capture is taken off the pasteboard to be read, and with false once
     /// the pasteboard is usable again. A large capture can take seconds; this is the cue to say so.
     public var onReadingChange: (@MainActor (Bool) -> Void)?
@@ -100,10 +101,11 @@ public final class ClipboardGuard {
     }
 
     private func handle(_ items: [PasteboardItemContent], imageData: Data) {
+        let copiedAt = Date()
         let key = digest(of: imageData)
         guard !knownClean.contains(key) else { return }
         if let known = recent.first(where: { $0.digest == key }) {
-            replace(with: known.item, original: items, regions: known.regions)
+            replace(with: known.item, original: items, regions: known.regions, copiedAt: copiedAt)
             return
         }
 
@@ -132,7 +134,7 @@ public final class ClipboardGuard {
             guard pasteboard.changeCount == heldCount else { return }
             switch (outcome, blurred) {
             case (.redacted(let capture), let blurred?):
-                replace(with: blurred, original: items, regions: capture.redacted.regions)
+                replace(with: blurred, original: items, regions: capture.redacted.regions, copiedAt: copiedAt)
             case (.redacted, nil):
                 // Known to show something and no blurred copy to offer: an empty clipboard is the safe answer.
                 logger.error("Could not encode the blurred capture; it was not put back on the clipboard")
@@ -212,11 +214,11 @@ public final class ClipboardGuard {
         return capture.encoded(as: NSPasteboard.PasteboardType.png.rawValue).map { [(type: .png, data: $0)] }
     }
 
-    private func replace(with blurred: PasteboardItemContent, original items: [PasteboardItemContent], regions: [SensitiveRegion]) {
+    private func replace(with blurred: PasteboardItemContent, original items: [PasteboardItemContent], regions: [SensitiveRegion], copiedAt: Date) {
         write([blurred], marked: true)
         original = (items, pasteboard.changeCount)
         for entry in blurred { knownClean.insert(digest(of: entry.data)) }
-        onRedaction?(regions)
+        onRedaction?(regions, copiedAt)
     }
 
     private func remember(_ blurred: PasteboardItemContent, for key: Data, regions: [SensitiveRegion]) {

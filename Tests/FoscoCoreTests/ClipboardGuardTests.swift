@@ -15,7 +15,7 @@ import Testing
 
     init() {
         watcher = ClipboardGuard(pasteboard: pasteboard, pipeline: RedactionPipeline(), knownClean: DigestStore(defaults: nil))
-        watcher.onRedaction = { [unowned self] in redactions.append($0) }
+        watcher.onRedaction = { [unowned self] regions, _ in redactions.append(regions) }
         watcher.onReadingChange = { [unowned self] in reading.append($0) }
     }
 

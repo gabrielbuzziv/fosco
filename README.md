@@ -30,13 +30,21 @@ Depois de aberto, o Fosco fica na barra de menus, no ícone de olho riscado, e p
 | Salva em `~/Pictures/Screenshots` | Borra cada imagem nova, no próprio arquivo |
 | Salva na pasta de capturas do macOS (a Mesa, por padrão) | Borra os arquivos novos que o macOS marcou como captura de tela |
 
-O app de captura continua mostrando a imagem original na janela dele: o que o Fosco borra é a cópia que você cola e o arquivo salvo. Uma notificação avisa cada vez que algo é borrado.
+O que o Fosco borra é a cópia que você cola e o arquivo salvo. Uma notificação avisa cada vez que algo é borrado.
+
+### Shottr
+
+Quando o Shottr abre a captura no editor, o Fosco pede a ele para mostrar a cópia borrada no lugar da original, cerca de um segundo depois. A partir daí, copiar, salvar, fixar ou arrastar a imagem do Shottr leva a versão borrada, e **Restaurar Original** devolve a original também ao editor.
+
+A miniatura de pré-visualização do Shottr não pode ser trocada: ela continua com a original até ser usada ou fechada, e a notificação do Fosco avisa quando é o caso. Para ter a troca, deixe a captura de área abrir o editor em vez da pré-visualização, nos ajustes do Shottr.
+
+Outros apps de captura continuam mostrando a original na janela deles, como a miniatura flutuante do macOS.
 
 A leitura leva cerca de 0,3 s em uma captura de área e de 1 a 1,5 s em uma tela inteira de 1440p. Nesse intervalo a área de transferência fica vazia, e o ícone da barra de menus mostra `…` quando a espera é longa o bastante para ser notada.
 
 ## O que ele não cobre
 
-- Capturas arrastadas direto do editor do Shottr ou da miniatura flutuante do macOS. Elas não passam pela área de transferência nem por uma pasta monitorada.
+- Capturas arrastadas da miniatura flutuante do macOS, da miniatura de pré-visualização do Shottr, ou do editor do Shottr no segundo em que a captura ainda está sendo lida. Elas não passam pela área de transferência nem por uma pasta monitorada.
 - Imagens copiadas junto com outros dados (um slide, uma camada de design, uma imagem de página da web). São conteúdo do próprio app de origem e ficam como estão.
 - Outros dados sensíveis. O Fosco procura e-mails e telefones (formato brasileiro, norte-americano ou internacional com `+`); CPF, CNPJ, cartões e senhas não são detectados.
 - O reconhecimento de texto pode falhar: fontes incomuns ou texto muito pequeno podem passar. Um número quebrado em duas linhas mantém os dígitos da segunda.
