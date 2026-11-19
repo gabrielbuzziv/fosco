@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Clientes — Painel</title>
+<!-- Every address and number on this page is made up so that it cannot belong to anyone: the
+     addresses say "exemplo", mobile numbers start with 90 and landlines with 4004. -->
+<style>
+  :root { --bg:#f6f7f9; --panel:#fff; --text:#1b1f24; --muted:#6b7480; --line:#e5e8ec; --accent:#2563eb; --chip:#eef2ff; --code:#f1f3f5; }
+  html.dark { --bg:#0f1115; --panel:#171a21; --text:#e6e9ee; --muted:#8b95a3; --line:#262b34; --accent:#6ea8ff; --chip:#1e2636; --code:#11141a; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; }
+  html { background: var(--bg); }
+  body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); display:flex; overflow:hidden; }
+  aside { width: 220px; background: var(--panel); border-right:1px solid var(--line); padding:16px 12px; display:flex; flex-direction:column; gap:4px; }
+  aside h1 { font-size:15px; margin:0 8px 14px; }
+  aside a { padding:7px 8px; border-radius:6px; color:var(--muted); text-decoration:none; }
+  aside a.on { background:var(--chip); color:var(--accent); font-weight:600; }
+  .me { margin-top:auto; padding:8px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); }
+  .me b { display:block; color:var(--text); font-size:12px; }
+  main { flex:1; min-width:0; padding:18px 22px; display:flex; flex-direction:column; gap:14px; }
+  header { display:flex; align-items:center; gap:12px; }
+  header h2 { font-size:19px; margin:0; flex:1; }
+  header input { width:280px; padding:7px 10px; border:1px solid var(--line); border-radius:7px; background:var(--panel); color:var(--text); font:inherit; }
+  .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .card small { color:var(--muted); display:block; }
+  .card strong { font-size:20px; }
+  .cols { display:flex; gap:14px; min-height:0; flex:1; }
+  .table { flex:1; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); padding:9px 12px; border-bottom:1px solid var(--line); }
+  td { padding:8px 12px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .pill { font-size:11px; padding:2px 8px; border-radius:99px; background:var(--chip); color:var(--accent); }
+  .side { width:400px; display:flex; flex-direction:column; gap:12px; }
+  .box { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .box h3 { margin:0 0 8px; font-size:13px; }
+  dl { display:grid; grid-template-columns:90px 1fr; gap:5px 8px; margin:0; }
+  dt { color:var(--muted); } dd { margin:0; }
+  .msg { background:var(--chip); border-radius:10px; padding:8px 10px; margin-top:6px; }
+  .msg.you { background:var(--code); }
+  pre { margin:0; font: 12px/1.5 ui-monospace, Menlo, monospace; background:var(--code); border-radius:8px; padding:10px 12px; white-space:pre-wrap; }
+  footer { font-size:11px; color:var(--muted); }
+  #truth { display:none; }
+</style>
+</head>
+<body>
+<aside>
+  <h1>Acme CRM</h1>
+  <a>Visão geral</a><a class="on">Clientes</a><a>Pedidos</a><a>Faturas</a><a>Relatórios</a><a>Configurações</a>
+  <div class="me"><b>Marina Duarte</b><span data-s="email">marina.duarte@crmexemplo.com.br</span></div>
+</aside>
+<main>
+  <header>
+    <h2>Clientes</h2>
+    <input value="Buscar por nome, e-mail ou telefone">
+    <span>Suporte <span data-s="phone">(11) 4002-8922</span></span>
+  </header>
+  <section class="cards">
+    <div class="card"><small>Clientes ativos</small><strong data-d>1.284</strong></div>
+    <div class="card"><small>Receita do mês</small><strong data-d>R$ 128.480,90</strong></div>
+    <div class="card"><small>Ticket médio</small><strong data-d>R$ 1.299,90</strong></div>
+    <div class="card"><small>Novos em novembro</small><strong data-d>+12,5%</strong></div>
+  </section>
+  <div class="cols">
+    <div class="table"><table>
+      <thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Pedido</th><th>Criado em</th><th>Valor</th><th>Status</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="side">
+      <div class="box">
+        <h3>Contato selecionado</h3>
+        <dl>
+          <dt>Nome</dt><dd>Rafael Monteiro</dd>
+          <dt>E-mail</dt><dd><span data-s="email">rafael.monteiro@construtoraexemplo.com.br</span></dd>
+          <dt>Celular</dt><dd><span data-s="phone">+55 (31) 9 0765-4321</span></dd>
+          <dt>WhatsApp</dt><dd><span data-s="phone">5531907654321</span></dd>
+          <dt>Cliente desde</dt><dd><span data-d>14/03/2021</span></dd>
+          <dt>Protocolo</dt><dd><span data-d>2026.11.000482</span></dd>
+        </dl>
+      </div>
+      <div class="box">
+        <h3>Conversa</h3>
+        <div class="msg">Oi! Pode me ligar no <span data-s="phone">11 90765-4321</span> depois das <span data-d>14:30</span>? Se preferir, manda e-mail para <span data-s="email">rafa.exemplo88@gmail.com</span> que eu respondo.</div>
+        <div class="msg you">Combinado. Enviei o boleto de <span data-d>R$ 2.450,00</span> com vencimento em <span data-d>25/11/2026</span> para <span data-s="email">financeiro@construtoraexemplo.com.br</span>.</div>
+        <div class="msg">Meu sócio fica no escritório de Lisboa: <span data-s="phone">+351 912 345 678</span>, ou nos EUA <span data-s="phone">+1 (415) 555-0132</span>.</div>
+      </div>
+      <div class="box">
+        <h3>Último evento</h3>
+<pre>{
+  "id": <span data-d>4815162342</span>,
+  "email": "<span data-s="email">ana.clara@exemplo.io</span>",
+  "phone": "<span data-s="phone">+5511902345678</span>",
+  "created_at": <span data-d>1795093188</span>,
+  "ip": "<span data-d>192.168.0.12</span>",
+  "version": "<span data-d>2.14.3</span>",
+  "at": "<span data-d>2026-11-19T14:32:10Z</span>"
+}</pre>
+      </div>
+    </div>
+  </div>
+  <footer>© 2026 Acme Tecnologia Ltda · CNPJ <span data-d>12.345.678/0001-90</span> · <span data-s="email">suporte@crmexemplo.com.br</span> · <span data-d>v4.18.2</span> · Rua das Flores, <span data-d>1200</span> — CEP <span data-d>01310-100</span></footer>
+</main>
+<pre id="truth"></pre>
+<script>
+  const people = [
+    ["Ana Beatriz Souza", "ana.exemplo.souza@gmail.com", "(11) 90765-1203"],
+    ["Bruno Henrique Lima", "exemplo_lima@hotmail.com", "11 90812-4455"],
+    ["Carla Mendes", "carla.mendes@clinicaexemplo.com.br", "+55 21 90701-3344"],
+    ["Diego Fernandes", "exemplo.diego@outlook.com", "21907651122"],
+    ["Eduarda Pires", "duda.exemplo+loja@uol.com.br", "+5541901237788"],
+    ["Felipe Azevedo", "felipe@advogadosexemplo.adv.br", "(47) 4004-5566"],
+    ["Gabriela Nunes", "gabi.exemplo@icloud.com", "47 9 0123-4567"],
+    ["Heitor Barbosa", "heitor.exemplo@proton.me", "5511906543210"],
+    ["Isabela Rocha", "isabela-exemplo@yahoo.com.br", "(21)90876-5432"],
+    ["João Pedro Alves", "jp.alves@empresaexemplo.tech", "(85) 90111-2233"],
+    ["Karina Teixeira", "karina.teixeira@saudeexemplo.med.br", "62 90444-7788"],
+    ["Lucas Martins", "lucasexemplo1994@gmail.com", "(19) 4004-8899"],
+    ["Mariana Castro", "mari@arquiteturaexemplo.com", "+55 (48) 90955-6677"],
+    ["Nicolas Ribeiro", "nicolas.exemplo@live.com", "71 90666-0011"],
+    ["Olívia Santana", "olivia.exemplo@bol.com.br", "(92) 90222-3344"],
+    ["Paulo Vieira", "paulo.exemplo@terra.com.br", "31 4004-7788"],
+    ["Quésia Moraes", "quesia@exemplo.dev", "+1 415-555-0199"],
+    ["Rodrigo Campos", "rodrigo.campos@fazendaexemplo.agr.br", "(67) 90333-4455"],
+    ["Sofia Cardoso", "sofia_exemplo22@outlook.com.br", "+44 20 7946 0958"],
+    ["Thiago Moreira", "thiago@exemplo.eng.br", "(27) 90777-8899"],
+  ];
+  const statuses = ["Ativo", "Em análise", "Inativo", "Ativo", "Ativo"];
+  const rows = document.getElementById("rows");
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  people.forEach(([name, email, phone], i) => {
+    const id = 48213 + i * 37, day = String(1 + (i * 3) % 28).padStart(2, "0");
+    const hour = String(8 + i % 10).padStart(2, "0"), min = String((i * 13) % 60).padStart(2, "0");
+    const value = (189.9 + i * 412.35).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    rows.insertAdjacentHTML("beforeend", `<tr>
+      <td><span data-d>#${id}</span></td><td>${esc(name)}</td>
+      <td><span data-s="email">${esc(email)}</span></td><td><span data-s="phone">${esc(phone)}</span></td>
+      <td><span data-d>2026-${String(1000 + i * 7)}</span></td><td><span data-d>${day}/11/2026 ${hour}:${min}</span></td>
+      <td><span data-d>${value}</span></td><td><span class="pill">${statuses[i % statuses.length]}</span></td></tr>`);
+  });
+  const params = new URLSearchParams(location.search);
+  if (params.get("theme") === "dark") document.documentElement.classList.add("dark");
+  if (params.get("zoom")) document.body.style.zoom = params.get("zoom");
+  const layoutHeight = Number(params.get("h") ?? 1000);
+  document.body.style.height = `${layoutHeight / Number(params.get("zoom") ?? 1)}px`;
+  {
+    const dpr = window.devicePixelRatio, vw = innerWidth, vh = layoutHeight;
+    const collect = (selector, kindOf) => [...document.querySelectorAll(selector)].flatMap((el) => {
+      const rects = [...el.getClientRects()].filter((r) => r.width > 0 && r.right <= vw && r.bottom <= vh && r.left >= 0 && r.top >= 0);
+      if (!rects.length) return [];
+      return [{ kind: kindOf(el), text: el.textContent, rects: rects.map((r) => [r.left * dpr, r.top * dpr, r.width * dpr, r.height * dpr].map((v) => Math.round(v * 10) / 10)) }];
+    });
+    document.getElementById("truth").textContent = JSON.stringify({
+      width: Math.round(vw * dpr), height: Math.round(vh * dpr), scale: dpr,
+      targets: collect("[data-s]", (el) => el.dataset.s), decoys: collect("[data-d]", () => "decoy"),
+    });
+  }
+</script>
+</body>
+</html>
