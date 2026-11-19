@@ -37,10 +37,12 @@ public actor RedactionPipeline {
         }
     }
 
-    public func outcome(for imageData: Data) async -> RedactionOutcome {
+    /// `settled` are pictures known to need no reading, in any encoding: blurred copies this app
+    /// made, and originals the user asked to keep.
+    public func outcome(for imageData: Data, settled: [Data] = []) async -> RedactionOutcome {
         let key = digest(of: imageData)
         if let running = inFlight[key] { return await running.value }
-        let task = Task.detached(priority: .userInitiated) { redact(imageData) }
+        let task = Task.detached(priority: .userInitiated) { redact(imageData, settled: settled) }
         inFlight[key] = task
         let outcome = await task.value
         inFlight[key] = nil
@@ -55,9 +57,16 @@ public func digest(of data: Data) -> Data {
 /// A scrolling capture this large takes minutes to read; leave it alone instead of stalling.
 private let maximumPixelCount = 80_000_000
 
-private func redact(_ data: Data) -> RedactionOutcome {
+private func redact(_ data: Data, settled: [Data]) -> RedactionOutcome {
     guard let decoded = decodeImage(data), decoded.image.width * decoded.image.height <= maximumPixelCount else {
         return .unreadable
+    }
+    let isSettled = settled.contains { known in
+        decodeImage(known).map { showsSamePicture(decoded.image, $0.image) } ?? false
+    }
+    guard !isSettled else {
+        logger.notice("Recognised a picture that needs no reading")
+        return .clean
     }
     guard let redacted = redactSensitiveContent(in: decoded.image, pixelsPerPoint: decoded.pixelsPerPoint) else {
         return .clean

@@ -32,6 +32,9 @@ public final class ClipboardGuard {
     private var recent: [(digest: Data, item: PasteboardItemContent, regions: [SensitiveRegion])] = []
     /// What the last blurred capture looked like before, and the change count of our replacement.
     private var original: (items: [PasteboardItemContent], changeCount: Int)?
+    /// Originals the user asked to keep. A screenshot app showing one copies it again in its own
+    /// encoding, which no digest would match.
+    private var restored: [Data] = []
 
     public init(pasteboard: NSPasteboard = .general, pipeline: RedactionPipeline, knownClean: DigestStore) {
         self.pasteboard = pasteboard
@@ -109,8 +112,9 @@ public final class ClipboardGuard {
         lastChangeCount = heldCount
         held = (items, heldCount)
         onReadingChange?(true)
+        let settled = recent.compactMap { preferredImageData(in: $0.item) } + restored
         work = Task { [pipeline] in
-            let outcome = await pipeline.outcome(for: imageData)
+            let outcome = await pipeline.outcome(for: imageData, settled: settled)
             var blurred: PasteboardItemContent?
             // Verdicts are kept even when this read ends up dropped below.
             switch outcome {
@@ -159,6 +163,8 @@ public final class ClipboardGuard {
             let key = digest(of: imageData)
             recent.removeAll { $0.digest == key }
             knownClean.insert(key)
+            restored.append(imageData)
+            if restored.count > 3 { restored.removeFirst() }
         }
         write(original.items, marked: true)
         return true

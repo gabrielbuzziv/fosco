@@ -231,6 +231,40 @@ import Testing
         #expect(pasteboard.data(forType: .png) == blurredPNG)
     }
 
+    /// Copies the picture the way a screenshot app does after showing it: in an encoding of its own.
+    private func copyAgain(_ image: CGImage) throws -> (tiff: Data, png: Data) {
+        try copy(DecodedImage(image: try #require(redrawn(image)), typeIdentifier: "public.png", dpi: 144, orientation: nil))
+    }
+
+    @Test func putsBackItsBlurredCopyWhenItReturnsInAnotherEncoding() async throws {
+        try copy(Self.secrets)
+        watcher.poll()
+        await watcher.idle()
+        let blurred = try #require(pasteboard.data(forType: .png).flatMap(decodeImage))
+
+        // Shottr, once its editor shows the blurred copy, copies it again when the editor is closed.
+        let again = try copyAgain(blurred.image)
+        watcher.poll()
+        await watcher.idle()
+        #expect(types == [.tiff, .png])
+        #expect(pasteboard.data(forType: .png) == again.png)
+        #expect(redactions.count == 1)
+    }
+
+    @Test func leavesARestoredCaptureAloneWhenItReturnsInAnotherEncoding() async throws {
+        try copy(Self.secrets)
+        watcher.poll()
+        await watcher.idle()
+        #expect(watcher.restoreOriginal())
+
+        // Shown the original again, the screenshot app copies it in its own encoding.
+        let again = try copyAgain(Self.secrets.image)
+        watcher.poll()
+        await watcher.idle()
+        #expect(pasteboard.data(forType: .png) == again.png)
+        #expect(redactions.count == 1, "the capture the user asked to keep was blurred again")
+    }
+
     @Test func reportsWhenThePasteboardIsBeingHeld() async throws {
         try copy(Self.secrets)
         watcher.poll()

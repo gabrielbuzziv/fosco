@@ -117,6 +117,24 @@ import Testing
         #expect(jpeg.typeIdentifier == "public.jpeg" && jpeg.image.width == 1100)
     }
 
+    @Test func doesNotReadAPictureItIsToldIsSettled() async throws {
+        let pipeline = RedactionPipeline()
+        let secrets = Fixture.denseGrid(width: 1100, height: 300, fontSize: 13).decoded
+        let known = try #require(encodeImage(secrets.image, as: "public.png", like: secrets))
+        func png(_ image: CGImage) throws -> Data {
+            try #require(encodeImage(image, as: "public.png", like: DecodedImage(image: image, typeIdentifier: "public.png", dpi: 144, orientation: nil)))
+        }
+
+        // Read on its own this picture would be blurred; listed as settled, in whatever encoding, it is left alone.
+        guard case .clean = await pipeline.outcome(for: try png(try #require(redrawn(secrets.image))), settled: [known]) else {
+            Issue.record("a settled picture was read again"); return
+        }
+        let other = Fixture.denseGrid(width: 1100, height: 300, fontSize: 12).decoded.image
+        guard case .redacted = await pipeline.outcome(for: try png(other), settled: [known]) else {
+            Issue.record("another picture of the same size was taken for the settled one"); return
+        }
+    }
+
     @Test func warmsUpWithACaptureThatGoesThroughTheWholePath() throws {
         // If the sample showed nothing to hide, warming up would skip the blur.
         let sample = try #require(sampleCapture())
